@@ -6,6 +6,16 @@ The original project was designed for Windows 10 and AutoHotkey v1, but this ver
 This project started as a fork of [win-10-virtual-desktop-enhancer](https://github.com/sdias/win-10-virtual-desktop-enhancer), but has been completely rewritten for Windows 11 using AutoHotkey v2.
 It is now an independent project, fully redesigned and reimplemented from scratch.
 
+## This Fork
+
+This fork of
+[mogya/win-11-virtual-desktop-enhancer](https://github.com/mogya/win-11-virtual-desktop-enhancer)
+attempts to address window focus issues that sometimes occur when switching
+desktops. Specifically, the window that previously had focus in the desktop
+doesn't get focus when switching back. This fork attempts to remedy this by
+sending an alt-tab key when the focus is on the shell. It works most of the
+time, but not always.
+
 ## Introduction
 
 Windows 11 Virtual Desktop Enhancer is an [AutoHotkey v2](https://www.autohotkey.com/) script which adds some useful features to Windows 11 Virtual Desktops, like:

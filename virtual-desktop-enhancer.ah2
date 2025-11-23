@@ -231,7 +231,7 @@ SwitchToDesktop(num) {
     }
 
     previousDesktopNo := GetCurrentDesktopNumber()
-    GoToDesktopNumber(num)
+    GoToDesktopWithAltTab(num)
 }
 
 MoveToDesktop(num) {
@@ -260,6 +260,72 @@ MoveToDesktop(num) {
             TooltipManager.ShowTooltipOnMonitor(1, "Moved to " . DesktopNamesManager.GetName(num))
         }
     }
+}
+
+GoToDesktopWithAltTab(nTarget) {
+    count := GetDesktopCount()
+    if (count <= 0)
+        return
+    nTarget := (nTarget < 0) ? 0 : (nTarget >= count ? count - 1 : nTarget)
+
+    nCurr := GetCurrentDesktopNumber()
+    if (nCurr = nTarget)
+        return
+
+    ; Switch
+    DllCall("User32\AllowSetForegroundWindow", "Int", -1)  ; play nice with foreground rules
+    GoToDesktopNumber(nTarget)
+
+    ; Wait until the switch actually completes
+    _vde_WaitForDesktop(nTarget)
+
+    ; If focus is on the shell (desktop/taskbar) or nothing, nudge with one Alt+Tab
+    if _vde_FocusLooksShellish() {
+        ; small settle; then Alt+Tab once
+        Sleep 60
+        Send "{Alt down}{Tab}{Alt up}"
+        ; Optional: confirm something real is active; try once more if still shellish
+        if _vde_FocusLooksShellish() {
+            Sleep 120
+            Send "{Alt down}{Tab}{Alt up}"
+        }
+    }
+}
+
+_vde_WaitForDesktop(n, timeoutMs := 700) {
+    deadline := A_TickCount + timeoutMs
+    while (GetCurrentDesktopNumber() != n && A_TickCount < deadline)
+        Sleep 10
+}
+
+_vde_FocusLooksShellish() {
+    ; Returns true if the current "active" window is likely the desktop/taskbar (or none)
+    try {
+        hwnd := WinGetID("A")
+    } catch {
+        hwnd := 0
+    }
+    if !hwnd
+        return true
+
+    ; Classes that aren't real app windows
+    cls := ""
+    try cls := WinGetClass("ahk_id " hwnd)
+    if (cls = "Progman"           ; desktop
+     || cls = "WorkerW"           ; desktop cover window
+     || cls = "Shell_TrayWnd"     ; taskbar
+     || cls = "XamlExplorerHostIslandWindow") ; widgets shell host (rarely active)
+        return true
+
+    ; If minimized, it’s not useful as “focused”
+    try {
+        mm := WinGetMinMax("ahk_id " hwnd)
+        if (mm = -1)  ; minimized
+            return true
+    }
+
+    ; Otherwise assume it's a real foreground window
+    return false
 }
 
 Main() {
